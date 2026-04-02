@@ -1,0 +1,59 @@
+//這是傳送者的板子
+
+//#include <esp_now.h>
+
+
+#include <Arduino.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
+
+Adafruit_MPU6050 mpu;
+
+void setup() {
+  Wire.begin();
+  Wire.setClock(400000);
+  Serial.begin(250000);
+  //初始化 MPU-6050 傳感器。
+
+  if (!mpu.begin()) {
+
+    Serial.println("Sensor init failed");
+
+    while (1)
+
+      yield();
+
+  }
+
+  Serial.println("Found a MPU-6050 sensor");
+
+  mpu.setAccelerometerRange(MPU6050_RANGE_2_G);
+
+}
+
+void loop() {
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+  //列出加速度值
+//  Serial.print(" X,Y,Z= ");
+  Serial.print(a.acceleration.x);
+  Serial.print(",");
+  Serial.print(a.acceleration.y);
+  Serial.print(",");
+  Serial.print(a.acceleration.z);
+  Serial.println();
+  //Serial.println("Board ID 1 : 16 bytes,x value: %f,y value: %f,z value: %f,",a.acceleration.x,a.acceleration.y,a.acceleration.z);
+  //Serial.println();
+
+  //mpu1.getEvent(&a, &g, &temp);
+  //列出加速度值
+  /*
+  Serial.printf("Board ID 1 : 1 bytes,");
+  Serial.printf("x value: %f,", a.acceleration.x);
+  Serial.printf("y value: %f,", a.acceleration.y);
+  Serial.printf("z value: %f", a.acceleration.z);
+  Serial.print(",2,");
+  Serial.println();*/
+
+}

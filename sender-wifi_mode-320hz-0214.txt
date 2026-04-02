@@ -1,0 +1,82 @@
+#include <esp_now.h>
+#include <WiFi.h>
+#include <Arduino.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
+
+// Create two MPU6050 sensor instances
+Adafruit_MPU6050 mpu1;
+
+
+// REPLACE WITH THE RECEIVER'S MAC Address
+uint8_t broadcastAddress[] = {0x30, 0xC9, 0x22, 0xEC, 0xB5, 0xFC};
+
+// Structure example to send data
+typedef struct struct_message {
+    int id; // must be unique for each sender board
+    float x1, y1, z1; // Sensor 1 data
+
+} struct_message;
+
+// Create a struct_message called myData
+struct_message myData;
+
+
+void setup() {
+    Serial.begin(115200);
+    WiFi.mode(WIFI_STA);
+
+    // Initialize MPU-6050 sensors
+    if (!mpu1.begin(0x68)) {
+        Serial.println("Sensor 1 init failed");
+        while (1) yield();
+    }
+    
+    Serial.println("Found MPU-6050 sensors");
+
+    mpu1.setAccelerometerRange(MPU6050_RANGE_2_G);
+//    mpu2.setAccelerometerRange(MPU6050_RANGE_2_G);
+
+    // Init ESP-NOW
+    if (esp_now_init() != ESP_OK) {
+        Serial.println("Error initializing ESP-NOW");
+        return;
+    }
+    // Register peer
+    esp_now_peer_info_t peerInfo;
+    memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+    peerInfo.channel = 0;  
+    peerInfo.encrypt = false;
+
+    // Add peer        
+    if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+        Serial.println("Failed to add peer");
+        return;
+    }
+}
+
+void loop() {
+    sensors_event_t a1, g1, temp1;
+
+    // Get data from the first sensor
+    mpu1.getEvent(&a1, &g1, &temp1);
+    
+    // Get data from the second sensor
+    myData.id = 1; // Can be unique for each sender if needed
+    myData.x1 = a1.acceleration.x;
+    myData.y1 = a1.acceleration.y;
+    myData.z1 = a1.acceleration.z;
+
+
+    // Print values to Serial in a format suitable for Serial Plotter
+    Serial.print("x:"); Serial.print(myData.x1); Serial.print("\t");
+    Serial.print("y:"); Serial.print(myData.y1); Serial.print("\t");
+    Serial.print("z:"); Serial.print(myData.z1); Serial.println("\t");
+
+
+    // Send message via ESP-NOW
+    esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *)&myData, sizeof(myData));
+    
+
+}

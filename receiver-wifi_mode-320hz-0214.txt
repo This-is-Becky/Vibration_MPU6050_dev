@@ -1,0 +1,61 @@
+#include <esp_now.h>
+#include <WiFi.h>
+
+// Structure example to receive data
+// Must match the sender structure
+typedef struct struct_message {
+  int id;
+  float x;
+  float y;
+  float z;
+} struct_message;
+
+// Create a struct_message called myData
+struct_message myData;
+
+// Callback function that will be executed when data is received
+void OnDataRecv(const esp_now_recv_info* recv_info, const uint8_t* incomingData, int len) {
+  // Copy incoming data into myData structure
+  memcpy(&myData, incomingData, sizeof(myData));
+  
+  // Print received x, y, z values formatted to 4 decimal places
+  Serial.printf("x: %.4f, y: %.4f, z: %.4f\n", myData.x, myData.y, myData.z);
+}
+
+
+void setup() {
+  // Initialize Serial Monitor
+  Serial.begin(115200);
+
+  // Set device to Wi-Fi Station mode
+  WiFi.mode(WIFI_STA);
+
+  // Print Wi-Fi mode to verify if it was set correctly
+  if (WiFi.getMode() == WIFI_STA) {
+    Serial.println("WiFi mode is set to STA (Station mode)");
+  } else {
+    Serial.println("Failed to set WiFi mode to STA");
+  }
+
+  // Add a small delay to ensure Wi-Fi stack is initialized
+  delay(100);
+
+  // Print device2's MAC address
+  Serial.print("Device2 MAC address: ");
+  Serial.println(WiFi.macAddress());  // This will print the MAC address of device2
+
+  // Initialize ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Register the callback function for receiving data
+  esp_now_register_recv_cb(OnDataRecv);
+
+  delay(5000);
+}
+
+void loop() {
+
+}
